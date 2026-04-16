@@ -6,10 +6,10 @@
 
 long long counter = 0;
 pthread_mutex_t lock;
-long long increments_per_thread;
+long long work_per_thread;
 
 void* increment_task(void* arg) {
-    for (long long i = 0; i < increments_per_thread; i++) {
+    for (long long i = 0; i < work_per_thread; i++) {
         pthread_mutex_lock(&lock);
         counter++;
         pthread_mutex_unlock(&lock);
@@ -18,17 +18,17 @@ void* increment_task(void* arg) {
 }
 
 int main(int argc, char* argv[]) {
-    int n = (argc > 1) ? atoi(argv[1]) : 2;
-    increments_per_thread = TARGET / n;
+    int n_threads = (argc > 1) ? atoi(argv[1]) : 2;
+    work_per_thread = TARGET / n_threads;
 
-    pthread_t threads[n];
+    pthread_t threads[n_threads];
     pthread_mutex_init(&lock, NULL);
 
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n_threads; i++) {
         pthread_create(&threads[i], NULL, increment_task, NULL);
     }
 
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n_threads; i++) {
         pthread_join(threads[i], NULL);
     }
 
