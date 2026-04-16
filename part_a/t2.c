@@ -8,7 +8,7 @@ long long counter = 0;
 pthread_mutex_t lock;
 long long work_per_thread;
 
-void* increment_task(void* arg) {
+void* increment_task() {
     for (long long i = 0; i < work_per_thread; i++) {
         pthread_mutex_lock(&lock);
         counter++;

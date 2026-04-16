@@ -6,7 +6,7 @@
 long long cont = 0;
 long long work_per_thread;
 
-void* increment(void* arg){
+void* increment(){
     for (long long i = 0; i < work_per_thread; i++){
         cont++;
     }
