@@ -2,7 +2,7 @@
 
 CSV_FILE="results.csv"
 THREADS=(2 4 8)
-CPU_CORES=$(sysctl -n hw.ncpu)
+CPU_CORES=$(nproc)
 
 if [ ! -f "$CSV_FILE" ]; then
     echo "timestamp,experiment,cpu_cores,n_threads,final_counter,real_time,user_time,sys_time" > "$CSV_FILE"
@@ -13,7 +13,7 @@ run_experiment() {
     local n=$2
     local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
     
-    echo "$prog with $n threads"
+    echo "Running $prog with $n threads..."
     
     tmp_time=$(mktemp)
     output=$( { time -p "./compiled/$prog" "$n"; } 2> "$tmp_time" )

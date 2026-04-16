@@ -3,18 +3,18 @@ CFLAGS  = -O2 -Wall -Wextra -std=c11
 LIBS_T  = -lpthread
 LIBS_P  = -lpthread
 
-TARGETS = compiled/p1_no_sync compiled/p2_semaphore \
+TARGETS = compiled/p1 compiled/p2 \
           compiled/t1 compiled/t2
 
 .PHONY: all clean run-partA run-partB benchmark
 
 all: $(TARGETS)
 
-compiled/p1_no_sync: part_b/p1_no_sync.c
+compiled/p1: part_b/p1.c
 	mkdir -p compiled
 	$(CC) $(CFLAGS) -o $@ $< $(LIBS_P)
 
-compiled/p2_semaphore: part_b/p2_semaphore.c
+compiled/p2: part_b/p2.c
 	mkdir -p compiled
 	$(CC) $(CFLAGS) -o $@ $< $(LIBS_P)
 
@@ -29,7 +29,7 @@ compiled/t2: part_a/t2.c
 run-partA: compiled/t1 compiled/t2
 	./run_partA.sh
 
-run-partB: compiled/p1_no_sync compiled/p2_semaphore
+run-partB: compiled/p1 compiled/p2
 	./run_partB.sh
 
 benchmark: run-partA run-partB

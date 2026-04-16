@@ -2,7 +2,7 @@
 
 CSV_FILE="results.csv"
 THREADS=(2 4 8)
-CPU_CORES=$(sysctl -n hw.ncpu)
+CPU_CORES=$(nproc)
 
 run_experiment() {
     local prog=$1
@@ -14,7 +14,7 @@ run_experiment() {
     tmp_time=$(mktemp)
     output=$( { /usr/bin/time -p "./compiled/$prog" "$n"; } 2> "$tmp_time" )
     
-    final_counter=$(echo "$output" | grep "Final counter:" | awk '{print $3}')
+    final_counter=$(echo "$output" | grep "counter   =" | awk '{print $4}')
     
     real_time=$(grep "real" "$tmp_time" | awk '{print $2}')
     user_time=$(grep "user" "$tmp_time" | awk '{print $2}')
@@ -26,8 +26,8 @@ run_experiment() {
 }
 
 for n in "${THREADS[@]}"; do
-    run_experiment "p1_no_sync" "$n"
-    run_experiment "p2_semaphore" "$n"
+    run_experiment "p1" "$n"
+    run_experiment "p2" "$n"
 done
 
 echo "Results appended to: $CSV_FILE"
