@@ -1,17 +1,16 @@
 # O Duelo de Contextos (Processos vs. Threads)
 
 ## 1. Objetivo
-O objetivo deste trabalho é realizar um experimento exploratório comparando o overhead de criação, o custo de comunicação e a consistência de dados entre Processos (padrão POSIX fork) e Threads (padrão POSIX pthreads) em ambiente Unix-like. O problema consiste em incrementar um contador global até o valor de 1.000.000.000 (um bilhão), distribuindo o esforço entre N unidades de execução (onde N = 2, 4 e 8).
+
+O objetivo deste trabalho é realizar um experimento exploratório comparando o overhead de criação, o custo de comunicação e a consistência de dados entre Processos (padrão POSIX fork) e Threads (padrão POSIX pthreads) em ambiente Unix. O problema consiste em incrementar um contador global até o valor de 1.000.000.000 (um bilhão), distribuindo o esforço entre N unidades de execução (onde N = 2, 4 e 8).
 
 ## 2. Assinatura do Hardware
-*Colocar aqui abaixo o resultado do comando `lscpu` (no Linux) ou `sysctl -a | grep hw.ncpu` (no macOS) quando executar no ambiente Linux. Não consegui fazer pois estou em windows*
 
 ```text
-#  (me baseando no registro de 20 cores do arquivo de resultados)
-Arquitetura:             x86_64
-CPUs:                    20
-Modelo:                  [MODELO DO PROCESSADOR AQUI]
-Sistema Operacional:     [OS AQUI]
+Arquitetura: x86_64
+CPUs: 20
+Modelo: 13th Gen Intel(R) Core(TM) i7-13650HX
+Sistema Operacional: Ubuntu 24.04
 ```
 
 ## 3. Tabela de Tempos
@@ -39,9 +38,8 @@ Nos experimentos **T1** e **P1**, o valor esperado era de 1 bilhão. No entanto,
   * N=8: 256.127.022
 
 **Explicação do Erro:**
-O contador não alcançou 1 bilhão devido à falta de sincronização, gerando o fenômeno de **Condição de Corrida (Race Condition)**. A operação `counter++` não é atômica para o processador; ela envolve ler o valor da memória, incrementar e escrever o resultado de volta. Como a máquina utilizada possui alto número de núcleos (20 cores lógicos identificados no `results.csv`), as threads e processos rodam verdadeiramente em paralelo (nível de hardware). 
 
-Múltiplas execuções leem simultaneamente o mesmo valor inicial da memória e, ao incrementarem e escreverem, sobrescrevem o progresso das outras execuções, causando intensa perda de contagem. Observa-se que, quanto maior o número de `N` (trabalhadores), maior a perda de informações (mais distante do valor de 1 bilhão), pois as colisões simultâneas de acesso à variável em múltiplos cores aumentam consideravelmente.
+Nos cenários sem sincronização (T1 e P1), os contadores ficaram muito abaixo do bilhão esperado, atingindo valores finais entre 199 milhões e 504 milhões. Essa falha ocorre devido a uma condição de corrida clássica, pois o incremento de uma variável não é uma operação atômica em nível de hardware, consistindo em pequenas etapas separadas de leitura, adição e gravação. Sem mecanismos de exclusão mútua, os trabalhadores que estão rodando simultaneamente leem o mesmo valor base nos registradores e sobrescrevem o progresso uns dos outros na memória, causando a perda sistemática de milhões de incrementos.
 
 ## 5. Gráfico de Escalabilidade
 
@@ -51,9 +49,8 @@ Abaixo está o gráfico comparativo do tempo de execução versus o número de t
 
 ## 6. Conclusão
 
-Através dos experimentos conduzidos, é possível analisar importantes características arquiteturais entre as abordagens de concorrência e paralelismo:
+Avaliando a eficiência na comunicação e sincronização, o modelo baseado em Threads demonstrou desempenho significativamente superior ao de Processos. A utilização de mecanismos de sincronizão para threads exigiu tempos na faixa de quarenta a cinquenta segundos, enquanto a combinação de semáforos com memória compartilhada para processos ultrapassou os cem segundos em todos os cenários. Essa diferença ocorre porque as threads compartilham nativamente o mesmo espaço de endereçamento e utilizam operações de bloqueio rápidas no espaço de usuário, enquanto os processos exigem transições custosas a cada bloqueio e liberação de recurso compartilhado.
 
-1. **Overhead de Criação e Execução**: Os Processos (P2) demonstraram um overhead gigantesco comparado às Threads (T2) sob sincronização pesada. Enquanto em T2 com 8 threads a duração foi de ~53s, o cenário P2 com 8 processos levou mais de 3 minutos (~187s). Criar processos via `fork()` implica uma duplicação de recursos mais pesada do que criar threads (que dividem a mesma área de memória do processo pai), embora o impacto mais brutal nos resultados esteja na forma de comunicação e sincronismo.
-2. **Eficiência na Comunicação e Sincronização**: Nas Threads (T2), o uso de variáveis e `pthread_mutex` diretos em memória compartilhada é bastante eficiente no Linux. Nos Processos (P2), os incrementos são feitos através de memória compartilhada System V (`shmget`/`shmat`) e protegidos por Semáforos POSIX (`sem_open`/`sem_wait`/`sem_post`). Como cada incremento força uma trava do semáforo nomeado em nível do kernel do SO, ocorre um volume excessivo de chamadas de sistema ("sys_time" alcançou incríveis 1205 segundos somados entre todos os cores). Dessa forma, percebe-se claramente que **Threads tiveram uma comunicação/sincronização absurdamente mais leve e um menor overhead** em relação a Processos utilizando recursos IPC (Semáforos IPC) para tarefas com altíssima granulidade.
+Quanto ao overhead de criação, o modelo de Processos impõe a maior carga ao sistema operacional por definição arquitetural. Iniciar um processo exige a duplicação de estruturas de controle, o mapeamento de novas tabelas de páginas e o estabelecimento de uma região de memória interprocessos. Em contrapartida, iniciar threads é um procedimento consideravelmente mais leve, limitando-se a alocar uma nova pilha e um bloco de controle reduzido, o que reaproveita todo o contexto do programa principal, constituindo uma opção menos custosa.
 
-Em suma, as abordagens sem sincronismo (T1 e P1) revelaram que, embora a velocidade seja estupenda, ocorre forte inconsistência nos dados em arquiteturas multicore, inviabilizando sua aplicação quando a exatidão das variáveis compartilhadas é fundamental.
+Em suma, as abordagens sem sincronismo (T1 e P1) revelaram que, embora a velocidade de execução seja ótima, ocorre forte inconsistência nos dados em arquiteturas multicore, inviabilizando sua aplicação quando a exatidão das variáveis compartilhadas é fundamental.
