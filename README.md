@@ -4,15 +4,15 @@
 O objetivo deste trabalho é realizar um experimento exploratório comparando o overhead de criação, o custo de comunicação e a consistência de dados entre Processos (padrão POSIX fork) e Threads (padrão POSIX pthreads) em ambiente Unix-like. O problema consiste em incrementar um contador global até o valor de 1.000.000.000 (um bilhão), distribuindo o esforço entre N unidades de execução (onde N = 2, 4 e 8).
 
 ## 2. Assinatura do Hardware
-*Colocar aqui abaixo o resultado do comando `lscpu` (no Linux) ou `sysctl -a | grep hw.ncpu` (no macOS) quando executar no ambiente Linux. Não consegui fazer pois estou em windows*
-
-```text
-#  (me baseando no registro de 20 cores do arquivo de resultados)
 Arquitetura:             x86_64
 CPUs:                    20
-Modelo:                  [MODELO DO PROCESSADOR AQUI]
-Sistema Operacional:     [OS AQUI]
-```
+Modelo:                  13th Gen Intel(R) Core(TM) i7-13650HX
+Threads por núcleo:      2
+Núcleos físicos:         14
+Frequência máxima:       4.9 GHz
+Cache L3:                24 MB
+Virtualização:           VT-x
+Sistema Operacional:     Linux (ambiente Unix-like)
 
 ## 3. Tabela de Tempos
 
